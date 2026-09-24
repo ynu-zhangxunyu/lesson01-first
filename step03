@@ -1,0 +1,277 @@
+指令：扩展为复利 vs 单利对比表：年限 10/20/30 年三行，列输出"复利终值/单利终值/差额"
+
+# -*- coding: utf-8 -*-
+# 交互式复利 vs 单利对比程序
+#
+# 复利公式（每年复利 1 次）：A = P * (1 + r) ** t   —— 利滚利，利息也生息
+# 单利公式：                A = P * (1 + r * t)     —— 只有本金生息
+#   A —— 最终本息和
+#   P —— 本金
+#   r —— 年利率（小数）
+#   t —— 存款年数
+
+# ---------- 输入本金 ----------
+# input() 读到的是字符串，float() 把它转成小数
+P = float(input("请输入本金（元）："))
+
+# ---------- 输入年利率 ----------
+# while True 循环：利率为负就提示并重输，合法才 break 跳出
+while True:
+    rate_percent = float(input("请输入年利率（%，如 5 表示 5%）："))  # 用户输入百分数
+    if rate_percent < 0:                 # 利率为负
+        print("利率不能为负")            # 提示错误
+        continue                         # 回到循环开头重新输入
+    break                                # 输入合法，跳出循环
+r = rate_percent / 100  # 百分数换小数，5 -> 0.05
+
+# ---------- 要对比的年限 ----------
+years_list = [10, 20, 30]  # 表格三行分别对应 10 年、20 年、30 年
+
+# ---------- 输出对比表 ----------
+# 表头：<8 表示左对齐占 8 个字符宽度，>16 表示右对齐占 16 个字符宽度
+print("")
+print("复利 vs 单利对比表（本金 {:,.2f} 元，年利率 {:.2f}%）".format(P, rate_percent))
+print("-" * 54)
+print("{:<8}{:>16}{:>16}{:>14}".format("年限", "复利终值", "单利终值", "差额"))
+print("-" * 54)
+
+# 逐个年限计算并打印一行
+for t in years_list:
+    compound = P * (1 + r) ** t   # 复利终值：(1+r) 的 t 次方，利息也参与计息
+    simple = P * (1 + r * t)      # 单利终值：利息 = 本金 * 利率 * 年数，不再生息
+    diff = compound - simple      # 差额：复利比单利多拿到的钱
+
+    # , 表示千位分隔符，.2f 表示保留两位小数
+    print("{:<8}{:>16,.2f}{:>16,.2f}{:>14,.2f}".format(
+        "{}年".format(t), compound, simple, diff))
+
+print("-" * 54)
+
+
+
+
+
+雨课堂作业指令AI指令原文：用 Python 写一个复利计算程序： - 本金 10000 元，年利率 5%，存 3 年，每年复利 1 次 - 输出最终本息和，保留两位小数还要可以计算交互版拦截负利率和30年差额的 - 代码要带注释，逐行解释公式含义，这个程序呢，用Python来写吧。然后呢，用个比较好看的新一点的这个框架，做个现代一点的，有点类似于就像苹果的桌面程序那种界面，界面做的稍微大一点
+
+# -*- coding: utf-8 -*-
+"""
+复利计算器 (GUI 版)
+使用 CustomTkinter 打造现代苹果风格桌面界面
+公式: FV = P * (1 + r)^t
+    FV = 最终本息和 (Future Value)
+    P  = 本金 (Principal)
+    r  = 年利率 (annual interest rate)
+    t  = 存款年数 (time in years)
+"""
+
+# 导入 customtkinter 库，简写为 ctk，方便后续调用
+import customtkinter as ctk
+# 导入 tkinter 的消息框模块，用于弹出提示
+from tkinter import messagebox
+
+
+def calculate_compound_interest(principal, rate_percent, years):
+    """
+    复利计算核心函数
+    参数:
+        principal    : 本金 (元)
+        rate_percent : 年利率 (百分比形式，例如 5 表示 5%)
+        years        : 存款年数
+    返回:
+        final_amount : 最终本息和 (元)，保留两位小数
+        interest     : 累计利息 (元)，保留两位小数
+    """
+    # 将百分比利率转换为小数形式：5% -> 0.05
+    # 复利公式中的 r 需要用小数参与运算
+    rate = rate_percent / 100
+
+    # ============================================================
+    # 复利公式：FV = P * (1 + r)^t
+    # ------------------------------------------------------------
+    # P   = principal      本金，这里是 10000 元
+    # r   = rate           年利率，这里是 0.05 (即 5%)
+    # t   = years          年数，这里是 3 年
+    # (1 + r)              每年本金增长的倍数，即 1.05
+    # (1 + r)^t            经过 t 年后的总增长倍数，即 1.05^3
+    # P * (1 + r)^t        最终本息和
+    # ============================================================
+    final_amount = principal * (1 + rate) ** years
+
+    # 累计利息 = 最终本息和 - 本金
+    interest = final_amount - principal
+
+    # round() 函数保留两位小数，满足"保留两位小数"的要求
+    return round(final_amount, 2), round(interest, 2)
+
+
+class CompoundInterestApp(ctk.CTk):
+    """复利计算器主窗口类，继承自 CTk (CustomTkinter 的主窗口类)"""
+
+    def __init__(self):
+        super().__init__()
+
+        # ===== 窗口基本设置 =====
+        self.title("复利计算器")          # 窗口标题
+        self.geometry("400x560")          # 窗口大小：宽 400，高 560
+        self.resizable(False, False)      # 禁止调整窗口大小
+        # 设置全局外观模式为浅色，符合苹果风简洁设计
+        ctk.set_appearance_mode("light")
+        # 设置默认颜色主题为蓝色
+        ctk.set_default_color_theme("blue")
+
+        # ===== 统一样式常量 =====
+        # 集中定义尺寸，确保整体风格统一简洁
+        FIELD_HEIGHT = 42        # 输入框与按钮统一高度
+        FIELD_RADIUS = 8         # 统一圆角半径（克制，不夸张）
+        LABEL_FONT = ctk.CTkFont(size=13)        # 标签字体
+        FIELD_FONT = ctk.CTkFont(size=15)        # 输入框字体
+        BUTTON_FONT = ctk.CTkFont(size=15, weight="bold")  # 按钮字体
+        H_PAD = 32               # 统一左右边距
+
+        # ===== 顶部标题区域 =====
+        # 干净的标题，不加 emoji，不加多余副标题
+        self.title_label = ctk.CTkLabel(
+            self,
+            text="复利计算器",
+            font=ctk.CTkFont(size=24, weight="bold"),
+        )
+        self.title_label.pack(pady=(40, 30))
+
+        # ===== 输入区域（无卡片边框，用留白分隔） =====
+        # ----- 本金输入 -----
+        ctk.CTkLabel(
+            self, text="本金（元）", font=LABEL_FONT, anchor="w"
+        ).pack(padx=H_PAD, pady=(0, 6), fill="x")
+
+        self.principal_entry = ctk.CTkEntry(
+            self,
+            placeholder_text="请输入本金",
+            font=FIELD_FONT,
+            height=FIELD_HEIGHT,
+            corner_radius=FIELD_RADIUS,
+            border_width=1,
+            border_color=("#d1d5db", "#545454"),
+            fg_color=("white", "#3a3a3a"),
+        )
+        self.principal_entry.insert(0, "10000")  # 默认值
+        self.principal_entry.pack(padx=H_PAD, pady=(0, 18), fill="x")
+
+        # ----- 年利率输入 -----
+        ctk.CTkLabel(
+            self, text="年利率（%）", font=LABEL_FONT, anchor="w"
+        ).pack(padx=H_PAD, pady=(0, 6), fill="x")
+
+        self.rate_entry = ctk.CTkEntry(
+            self,
+            placeholder_text="请输入年利率",
+            font=FIELD_FONT,
+            height=FIELD_HEIGHT,
+            corner_radius=FIELD_RADIUS,
+            border_width=1,
+            border_color=("#d1d5db", "#545454"),
+            fg_color=("white", "#3a3a3a"),
+        )
+        self.rate_entry.insert(0, "5")  # 默认值
+        self.rate_entry.pack(padx=H_PAD, pady=(0, 18), fill="x")
+
+        # ----- 存款年数输入 -----
+        ctk.CTkLabel(
+            self, text="存期（年）", font=LABEL_FONT, anchor="w"
+        ).pack(padx=H_PAD, pady=(0, 6), fill="x")
+
+        self.years_entry = ctk.CTkEntry(
+            self,
+            placeholder_text="请输入存期",
+            font=FIELD_FONT,
+            height=FIELD_HEIGHT,
+            corner_radius=FIELD_RADIUS,
+            border_width=1,
+            border_color=("#d1d5db", "#545454"),
+            fg_color=("white", "#3a3a3a"),
+        )
+        self.years_entry.insert(0, "3")  # 默认值
+        self.years_entry.pack(padx=H_PAD, pady=(0, 24), fill="x")
+
+        # ===== 计算按钮 =====
+        # 单一强调色，与输入框同高同圆角
+        self.calc_button = ctk.CTkButton(
+            self,
+            text="计算",
+            font=BUTTON_FONT,
+            height=FIELD_HEIGHT,
+            corner_radius=FIELD_RADIUS,
+            command=self.on_calculate,  # 点击时调用计算方法
+        )
+        self.calc_button.pack(padx=H_PAD, pady=(0, 28), fill="x")
+
+        # ===== 细分割线 =====
+        # 用一条极细的灰色线分隔输入区和结果区，比卡片更轻量
+        self.separator = ctk.CTkFrame(self, height=1, fg_color=("#e5e7eb", "#4a4a4a"))
+        self.separator.pack(padx=H_PAD, fill="x")
+
+        # ===== 结果展示区域（无卡片，直接留白展示） =====
+        # 结果标题
+        self.result_title = ctk.CTkLabel(
+            self,
+            text="到期本息和",
+            font=LABEL_FONT,
+            text_color="gray",
+        )
+        self.result_title.pack(pady=(24, 8))
+
+        # 大号金额显示，用主题色作为唯一强调
+        self.result_label = ctk.CTkLabel(
+            self,
+            text="¥0.00",
+            font=ctk.CTkFont(size=34, weight="bold"),
+            text_color="#1f6feb",
+        )
+        self.result_label.pack(pady=(0, 10))
+
+        # 累计利息显示
+        self.interest_label = ctk.CTkLabel(
+            self,
+            text="累计利息 ¥0.00",
+            font=LABEL_FONT,
+            text_color="gray",
+        )
+        self.interest_label.pack(pady=(0, 0))
+
+        # 程序启动时自动计算一次，展示默认参数的结果
+        self.on_calculate()
+
+    def on_calculate(self):
+        """计算按钮的回调方法：读取输入 -> 计算 -> 更新结果显示"""
+        try:
+            # 读取输入框内容并转为浮点数
+            # float() 可以处理 "10000"、"5"、"3" 等字符串
+            principal = float(self.principal_entry.get())
+            rate_percent = float(self.rate_entry.get())
+            years = float(self.years_entry.get())
+
+            # 基本合法性校验
+            if principal < 0 or rate_percent < 0 or years < 0:
+                messagebox.showerror("输入错误", "请输入非负数！")
+                return
+
+            # 调用复利计算函数，得到本息和与利息
+            final_amount, interest = calculate_compound_interest(
+                principal, rate_percent, years
+            )
+
+            # 更新界面显示，使用千分位格式化，更易读
+            # :,.2f 表示保留两位小数并添加千分位逗号
+            self.result_label.configure(text=f"¥{final_amount:,.2f}")
+            self.interest_label.configure(text=f"累计利息：¥{interest:,.2f}")
+
+        except ValueError:
+            # 如果输入不是合法数字，弹出错误提示
+            messagebox.showerror("输入错误", "请输入有效的数字！")
+
+
+# ===== 程序入口 =====
+# 只有直接运行本文件时才启动 GUI
+# (被其他模块 import 时不会执行)
+if __name__ == "__main__":
+    app = CompoundInterestApp()  # 创建应用实例
+    app.mainloop()               # 进入主事件循环，保持窗口显示
