@@ -1,0 +1,319 @@
+# -*- coding: utf-8 -*-
+"""
+复利计算器 (GUI 版)
+使用 CustomTkinter 打造现代苹果风格桌面界面
+公式: FV = P * (1 + r)^t
+    FV = 最终本息和 (Future Value)
+    P  = 本金 (Principal)
+    r  = 年利率 (annual interest rate)
+    t  = 存款年数 (time in years)
+"""
+
+# 导入 customtkinter 库，简写为 ctk，方便后续调用
+import customtkinter as ctk
+# 导入 tkinter 的消息框模块，用于弹出提示
+from tkinter import messagebox
+
+
+def calculate_compound_interest(principal, rate_percent, years):
+    """
+    复利计算核心函数
+    参数:
+        principal    : 本金 (元)
+        rate_percent : 年利率 (百分比形式，例如 5 表示 5%)
+        years        : 存款年数
+    返回:
+        final_amount : 最终本息和 (元)，保留两位小数
+        interest     : 累计利息 (元)，保留两位小数
+    """
+    # 将百分比利率转换为小数形式：5% -> 0.05
+    # 复利公式中的 r 需要用小数参与运算
+    rate = rate_percent / 100
+
+    # ============================================================
+    # 复利公式：FV = P * (1 + r)^t
+    # ------------------------------------------------------------
+    # P   = principal      本金，这里是 10000 元
+    # r   = rate           年利率，这里是 0.05 (即 5%)
+    # t   = years          年数，这里是 3 年
+    # (1 + r)              每年本金增长的倍数，即 1.05
+    # (1 + r)^t            经过 t 年后的总增长倍数，即 1.05^3
+    # P * (1 + r)^t        最终本息和
+    # ============================================================
+    final_amount = principal * (1 + rate) ** years
+
+    # 累计利息 = 最终本息和 - 本金
+    interest = final_amount - principal
+
+    # round() 函数保留两位小数，满足"保留两位小数"的要求
+    return round(final_amount, 2), round(interest, 2)
+
+
+def calculate_simple_interest(principal, rate_percent, years):
+    """
+    单利计算函数（用于和复利做对比）
+    单利公式: FV = P * (1 + r * t)
+        P  = 本金
+        r  = 年利率（小数）
+        t  = 年数
+    单利与复利的区别：单利只对本金计息，复利是"利滚利"
+    """
+    rate = rate_percent / 100                          # 百分比转小数
+    final_amount = principal * (1 + rate * years)      # 单利公式
+    interest = final_amount - principal                # 单利利息
+    return round(final_amount, 2), round(interest, 2)
+
+
+class CompoundInterestApp(ctk.CTk):
+    """复利计算器主窗口类，继承自 CTk (CustomTkinter 的主窗口类)"""
+
+    def __init__(self):
+        super().__init__()
+
+        # ===== 窗口基本设置 =====
+        self.title("复利计算器")          # 窗口标题
+        self.geometry("520x900")          # 窗口大小：放大为宽 520，高 900
+        self.resizable(False, False)      # 禁止调整窗口大小
+        # 设置全局外观模式为浅色，符合苹果风简洁设计
+        ctk.set_appearance_mode("light")
+        # 设置默认颜色主题为蓝色
+        ctk.set_default_color_theme("blue")
+
+        # ===== 统一样式常量（整体放大） =====
+        FIELD_HEIGHT = 54        # 输入框与按钮统一高度（放大）
+        FIELD_RADIUS = 10        # 统一圆角半径
+        LABEL_FONT = ctk.CTkFont(size=16)        # 标签字体（放大）
+        FIELD_FONT = ctk.CTkFont(size=18)        # 输入框字体（放大）
+        BUTTON_FONT = ctk.CTkFont(size=18, weight="bold")  # 按钮字体（放大）
+        H_PAD = 44               # 统一左右边距（放大）
+
+        # ===== 顶部标题区域 =====
+        # 干净的标题，不加 emoji，不加多余副标题
+        self.title_label = ctk.CTkLabel(
+            self,
+            text="复利计算器",
+            font=ctk.CTkFont(size=30, weight="bold"),
+        )
+        self.title_label.pack(pady=(40, 36))
+
+        # ===== 输入区域（无卡片边框，用留白分隔） =====
+        # ----- 本金输入 -----
+        ctk.CTkLabel(
+            self, text="本金（元）", font=LABEL_FONT, anchor="w"
+        ).pack(padx=H_PAD, pady=(0, 6), fill="x")
+
+        self.principal_entry = ctk.CTkEntry(
+            self,
+            placeholder_text="请输入本金",
+            font=FIELD_FONT,
+            height=FIELD_HEIGHT,
+            corner_radius=FIELD_RADIUS,
+            border_width=1,
+            border_color=("#d1d5db", "#545454"),
+            fg_color=("white", "#3a3a3a"),
+        )
+        self.principal_entry.insert(0, "10000")  # 默认值
+        self.principal_entry.pack(padx=H_PAD, pady=(0, 18), fill="x")
+
+        # ----- 年利率输入 -----
+        ctk.CTkLabel(
+            self, text="年利率（%）", font=LABEL_FONT, anchor="w"
+        ).pack(padx=H_PAD, pady=(0, 6), fill="x")
+
+        self.rate_entry = ctk.CTkEntry(
+            self,
+            placeholder_text="请输入年利率",
+            font=FIELD_FONT,
+            height=FIELD_HEIGHT,
+            corner_radius=FIELD_RADIUS,
+            border_width=1,
+            border_color=("#d1d5db", "#545454"),
+            fg_color=("white", "#3a3a3a"),
+        )
+        self.rate_entry.insert(0, "5")  # 默认值
+        self.rate_entry.pack(padx=H_PAD, pady=(0, 18), fill="x")
+
+        # ----- 存款年数输入 -----
+        ctk.CTkLabel(
+            self, text="存期（年）", font=LABEL_FONT, anchor="w"
+        ).pack(padx=H_PAD, pady=(0, 6), fill="x")
+
+        self.years_entry = ctk.CTkEntry(
+            self,
+            placeholder_text="请输入存期",
+            font=FIELD_FONT,
+            height=FIELD_HEIGHT,
+            corner_radius=FIELD_RADIUS,
+            border_width=1,
+            border_color=("#d1d5db", "#545454"),
+            fg_color=("white", "#3a3a3a"),
+        )
+        self.years_entry.insert(0, "3")  # 默认值
+        self.years_entry.pack(padx=H_PAD, pady=(0, 24), fill="x")
+
+        # ===== 实时计算绑定 =====
+        # 给三个输入框绑定键盘释放事件，输入任意一个都会自动重新计算
+        # 实现"交互版"：边输入边出结果，无需点击按钮
+        # _event 参数是回调必须接收的事件对象，此处忽略不使用
+        self.principal_entry.bind("<KeyRelease>", lambda _e: self.on_calculate())
+        self.rate_entry.bind("<KeyRelease>", lambda _e: self.on_calculate())
+        self.years_entry.bind("<KeyRelease>", lambda _e: self.on_calculate())
+
+        # ===== 计算按钮 =====
+        # 单一强调色，与输入框同高同圆角
+        self.calc_button = ctk.CTkButton(
+            self,
+            text="计算",
+            font=BUTTON_FONT,
+            height=FIELD_HEIGHT,
+            corner_radius=FIELD_RADIUS,
+            command=self.on_calculate,  # 点击时调用计算方法
+        )
+        self.calc_button.pack(padx=H_PAD, pady=(0, 12), fill="x")
+
+        # ===== 状态提示标签 =====
+        # 实时计算时用内联文字提示错误，不弹窗打扰用户
+        self.status_label = ctk.CTkLabel(
+            self,
+            text="",
+            font=LABEL_FONT,
+            text_color="red",
+        )
+        self.status_label.pack(padx=H_PAD, pady=(0, 16))
+
+        # ===== 细分割线 =====
+        # 用一条极细的灰色线分隔输入区和结果区，比卡片更轻量
+        self.separator = ctk.CTkFrame(self, height=1, fg_color=("#e5e7eb", "#4a4a4a"))
+        self.separator.pack(padx=H_PAD, fill="x")
+
+        # ===== 结果展示区域（无卡片，直接留白展示） =====
+        # 结果标题
+        self.result_title = ctk.CTkLabel(
+            self,
+            text="到期本息和",
+            font=LABEL_FONT,
+            text_color="gray",
+        )
+        self.result_title.pack(pady=(24, 8))
+
+        # 大号金额显示，用主题色作为唯一强调
+        self.result_label = ctk.CTkLabel(
+            self,
+            text="¥0.00",
+            font=ctk.CTkFont(size=44, weight="bold"),
+            text_color="#1f6feb",
+        )
+        self.result_label.pack(pady=(0, 12))
+
+        # 累计利息显示
+        self.interest_label = ctk.CTkLabel(
+            self,
+            text="累计利息 ¥0.00",
+            font=LABEL_FONT,
+            text_color="gray",
+        )
+        self.interest_label.pack(pady=(0, 20))
+
+        # ===== 第二条分割线 =====
+        self.separator2 = ctk.CTkFrame(self, height=1, fg_color=("#e5e7eb", "#4a4a4a"))
+        self.separator2.pack(padx=H_PAD, fill="x")
+
+        # ===== 30年差额对比区（复利 vs 单利） =====
+        # 展示同样本金和利率下，30年后复利比单利多赚多少
+        self.diff_title = ctk.CTkLabel(
+            self,
+            text="30年后复利 vs 单利",
+            font=LABEL_FONT,
+            text_color="gray",
+        )
+        self.diff_title.pack(pady=(16, 8))
+
+        # 复利30年本息和
+        self.compound_30_label = ctk.CTkLabel(
+            self,
+            text="复利：¥0.00",
+            font=ctk.CTkFont(size=18, weight="bold"),
+            text_color="#1f6feb",
+        )
+        self.compound_30_label.pack(pady=(0, 6))
+
+        # 单利30年本息和
+        self.simple_30_label = ctk.CTkLabel(
+            self,
+            text="单利：¥0.00",
+            font=ctk.CTkFont(size=18),
+            text_color="gray",
+        )
+        self.simple_30_label.pack(pady=(0, 10))
+
+        # 差额（复利比单利多赚）
+        self.diff_label = ctk.CTkLabel(
+            self,
+            text="差额：¥0.00",
+            font=ctk.CTkFont(size=17, weight="bold"),
+            text_color="#e63946",
+        )
+        self.diff_label.pack(pady=(0, 0))
+
+        # 程序启动时自动计算一次，展示默认参数的结果
+        self.on_calculate()
+
+    def on_calculate(self):
+        """计算回调：读取输入 -> 校验 -> 计算 -> 更新结果（支持实时调用）"""
+        # 先清空状态提示
+        self.status_label.configure(text="")
+
+        try:
+            # 读取输入框内容并转为浮点数
+            principal = float(self.principal_entry.get())
+            rate_percent = float(self.rate_entry.get())
+            years = float(self.years_entry.get())
+
+            # ===== 合法性校验（拦截非法输入） =====
+            # 本金不能为负
+            if principal < 0:
+                self.status_label.configure(text="本金不能为负数")
+                return
+            # ===== 拦截负利率 =====
+            # 利率不能为负（存款场景不接受负利率）
+            if rate_percent < 0:
+                self.status_label.configure(text="⚠ 利率不能为负数")
+                return
+            # 存期不能为负
+            if years < 0:
+                self.status_label.configure(text="存期不能为负数")
+                return
+
+            # ===== 计算指定年数的复利本息和 =====
+            final_amount, interest = calculate_compound_interest(
+                principal, rate_percent, years
+            )
+
+            # 更新主结果显示
+            self.result_label.configure(text=f"¥{final_amount:,.2f}")
+            self.interest_label.configure(text=f"累计利息 ¥{interest:,.2f}")
+
+            # ===== 计算30年差额：复利 vs 单利 =====
+            # 用当前本金和利率，统一按30年计算，对比两种计息方式的差异
+            compound_30, _ = calculate_compound_interest(principal, rate_percent, 30)
+            simple_30, _ = calculate_simple_interest(principal, rate_percent, 30)
+            # 差额 = 复利30年 - 单利30年（复利比单利多赚的部分）
+            diff = round(compound_30 - simple_30, 2)
+
+            # 更新30年对比区
+            self.compound_30_label.configure(text=f"复利：¥{compound_30:,.2f}")
+            self.simple_30_label.configure(text=f"单利：¥{simple_30:,.2f}")
+            self.diff_label.configure(text=f"差额：¥{diff:,.2f}")
+
+        except ValueError:
+            # 输入为空或非数字时，不弹窗，只提示
+            self.status_label.configure(text="请输入有效数字")
+            return
+
+
+# ===== 程序入口 =====
+# 只有直接运行本文件时才启动 GUI
+# (被其他模块 import 时不会执行)
+if __name__ == "__main__":
+    app = CompoundInterestApp()  # 创建应用实例
+    app.mainloop()               # 进入主事件循环，保持窗口显示
